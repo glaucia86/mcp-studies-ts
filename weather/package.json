@@ -1,0 +1,38 @@
+{
+  "name": "weather",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "bin": {
+    "weather": "./build/index.js"
+  },
+  "scripts": {
+    "build": "tsc && chmod 755 build/index.js"
+  },
+  "files": [
+    "build"
+  ],
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "weather",
+    "weather-api",
+    "weather-data",
+    "weather-forecast",
+    "weather-forecast-api",
+    "nodejs",
+    "javascript",
+    "typescript"
+  ],
+  "author": "Glaucia Lemos <twitter: @glaucia_lemos86> <github: @glaucia86>",
+  "license": "MIT",
+  "description": "a simple code sample to study about how to use the model context protocol (mcp) to create a weather api",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.7.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.11",
+    "typescript": "^5.8.2"
+  }
+}
