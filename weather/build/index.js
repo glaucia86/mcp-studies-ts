@@ -3,14 +3,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod";
 const NWS_API_BASE = "https://api.weather.gov";
 const USER_AGENT = "weather-app/1.0";
-const server = new McpServer({
-    name: "weather",
-    version: "1.0.0",
-    capabilities: {
-        resources: {},
-        tools: {},
-    },
-});
+// Helper function for making NWS API requests
 async function makeNWSRequest(url) {
     const headers = {
         "User-Agent": USER_AGENT,
@@ -28,6 +21,7 @@ async function makeNWSRequest(url) {
         return null;
     }
 }
+// Format alert data
 function formatAlert(feature) {
     const props = feature.properties;
     return [
@@ -35,12 +29,16 @@ function formatAlert(feature) {
         `Area: ${props.areaDesc || "Unknown"}`,
         `Severity: ${props.severity || "Unknown"}`,
         `Status: ${props.status || "Unknown"}`,
-        `Headline: ${props.headline || "Unknown"}`,
+        `Headline: ${props.headline || "No headline"}`,
         "---",
     ].join("\n");
 }
+// Create server instance
+const server = new McpServer({
+    name: "weather",
+    version: "1.0.0",
+});
 // Register weather tools
-// 'get-alerts' tool
 server.tool("get-alerts", "Get weather alerts for a state", {
     state: z.string().length(2).describe("Two-letter state code (e.g. CA, NY)"),
 }, async ({ state }) => {
@@ -63,7 +61,7 @@ server.tool("get-alerts", "Get weather alerts for a state", {
             content: [
                 {
                     type: "text",
-                    text: `No alerts found for state ${stateCode}.`,
+                    text: `No active alerts for ${stateCode}`,
                 },
             ],
         };
@@ -79,10 +77,13 @@ server.tool("get-alerts", "Get weather alerts for a state", {
         ],
     };
 });
-// 'get-forecast' tool
 server.tool("get-forecast", "Get weather forecast for a location", {
     latitude: z.number().min(-90).max(90).describe("Latitude of the location"),
-    longitude: z.number().min(-180).max(180).describe("Longitude of the location"),
+    longitude: z
+        .number()
+        .min(-180)
+        .max(180)
+        .describe("Longitude of the location"),
 }, async ({ latitude, longitude }) => {
     // Get grid point data
     const pointsUrl = `${NWS_API_BASE}/points/${latitude.toFixed(4)},${longitude.toFixed(4)}`;
@@ -97,13 +98,13 @@ server.tool("get-forecast", "Get weather forecast for a location", {
             ],
         };
     }
-    const forecastUrl = pointsData.properties.forecast;
+    const forecastUrl = pointsData.properties?.forecast;
     if (!forecastUrl) {
         return {
             content: [
                 {
                     type: "text",
-                    text: "No forecast URL found in grid point data",
+                    text: "Failed to get forecast URL from grid point data",
                 },
             ],
         };
@@ -120,7 +121,7 @@ server.tool("get-forecast", "Get weather forecast for a location", {
             ],
         };
     }
-    const periods = forecastData.properties.periods || [];
+    const periods = forecastData.properties?.periods || [];
     if (periods.length === 0) {
         return {
             content: [
@@ -149,10 +150,11 @@ server.tool("get-forecast", "Get weather forecast for a location", {
         ],
     };
 });
+// Start the server
 async function main() {
     const transport = new StdioServerTransport();
     await server.connect(transport);
-    console.log("Weather MCP Server is running on stdio");
+    console.error("Weather MCP Server running on stdio");
 }
 main().catch((error) => {
     console.error("Fatal error in main():", error);
